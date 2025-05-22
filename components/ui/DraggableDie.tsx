@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: DIE_SIZE,
         height: DIE_SIZE,
-        backgroundColor: "#eee",
+        backgroundColor: "rgb(255, 159, 28)",
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 8,

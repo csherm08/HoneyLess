@@ -14,7 +14,7 @@ export default function GameBoard({ board, onCellPress }: GameBoardProps) {
                 row.map((cell, colIndex) => (
                     <Pressable
                         key={`${rowIndex}-${colIndex}`}
-                        style={styles.cell}
+                        style={[styles.cell, cell !== "" && { backgroundColor: "rgb(255, 159, 28)" }]}
                         onPress={() => onCellPress(rowIndex, colIndex)}
                     >
                         <Text style={styles.cellText}>{cell}</Text>

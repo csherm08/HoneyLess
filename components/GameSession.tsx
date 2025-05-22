@@ -58,8 +58,8 @@ export default function GameSession({
 
     const handleHover = (x: number, y: number) => {
         if (gridOriginY == null) return;
-        const col = Math.floor((x - GRID_ORIGIN_X) / TILE_SIZE);
-        const row = Math.floor((y - gridOriginY) / TILE_SIZE);
+        const col = Math.round((x - DIE_SIZE / 2 - GRID_ORIGIN_X) / TILE_SIZE);
+        const row = Math.round((y - DIE_SIZE / 2 - gridOriginY) / TILE_SIZE);
         if (row >= 0 && row < 12 && col >= 0 && col < 12) {
             setHoveredCell({ row, col });
         } else {
@@ -128,6 +128,7 @@ export default function GameSession({
                             {[...Array(12)].map((_, row) =>
                                 [...Array(12)].map((_, col) => {
                                     const isHovered = hoveredCell?.row === row && hoveredCell?.col === col;
+                                    const placed = board[row][col];
                                     return (
                                         <View
                                             key={`${row}-${col}`}
@@ -137,9 +138,14 @@ export default function GameSession({
                                                 left: col * TILE_SIZE + GRID_ORIGIN_X,
                                                 width: TILE_SIZE,
                                                 height: TILE_SIZE,
-                                                borderColor: isHovered ? "lime" : "rgba(255,0,0,0.6)",
+                                                // color: isHovered ? "rgb(255, 159, 28)" : "rgba(255,0,0,0.6)",
+                                                borderColor: isHovered ? "rgb(255, 159, 28)" : "rgba(255,255,255)",
                                                 borderWidth: isHovered ? 3 : 1,
-                                                backgroundColor: isHovered ? "rgba(0,255,0,0.1)" : "transparent",
+                                                backgroundColor: placed
+                                                    ? "rgba(0,0,0,0.05)"
+                                                    : isHovered
+                                                        ? "rgba(0,255,0,0.1)"
+                                                        : "transparent",
                                             }}
                                         />
                                     );
