@@ -1,0 +1,91 @@
+import React, { useEffect } from "react";
+import { StyleSheet, Text } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from "react-native-reanimated";
+
+interface DraggableDieProps {
+    letter: string;
+    id: number;
+    originX: number;
+    originY: number;
+    isUsed: boolean;
+    onDrop: (id: number, x: number, y: number) => void;
+    onHover?: (x: number, y: number) => void;
+}
+
+const DIE_SIZE = 50;
+
+export default function DraggableDie({
+    letter,
+    id,
+    originX,
+    originY,
+    isUsed,
+    onDrop,
+    onHover,
+}: DraggableDieProps) {
+    const translateX = useSharedValue(originX);
+    const translateY = useSharedValue(originY);
+
+    useEffect(() => {
+        if (!isUsed) {
+            translateX.value = withSpring(originX);
+            translateY.value = withSpring(originY);
+        }
+    }, [isUsed]);
+
+    const pan = Gesture.Pan()
+        .onUpdate((event) => {
+            translateX.value = event.absoluteX - DIE_SIZE / 2;
+            translateY.value = event.absoluteY - DIE_SIZE * 2;
+
+            if (onHover) {
+                const screenX = translateX.value + DIE_SIZE / 2; // adjust this value to match the horizontal offset from left
+                const screenY = translateY.value + DIE_SIZE * 2; // adjust this value to match the vertical offset from top
+                runOnJS(onHover)(screenX, screenY);
+            }
+        })
+        .onEnd(() => {
+            runOnJS(onDrop)(id, translateX.value, translateY.value);
+        });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: translateX.value },
+            { translateY: translateY.value },
+        ],
+        opacity: isUsed ? 0.5 : 1,
+    }));
+
+    return (
+        <GestureDetector gesture={pan}>
+            <Animated.View style={[styles.die, animatedStyle]}>
+                <Text style={styles.dieText}>{letter}</Text>
+            </Animated.View>
+        </GestureDetector>
+    );
+}
+
+const styles = StyleSheet.create({
+    die: {
+        position: "absolute",
+        width: DIE_SIZE,
+        height: DIE_SIZE,
+        backgroundColor: "#eee",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: "#bbb",
+        zIndex: 10,
+    },
+    dieText: {
+        fontSize: 24,
+        fontWeight: "bold",
+    },
+});
