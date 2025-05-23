@@ -5,7 +5,7 @@ import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
-    withSpring,
+    withSpring
 } from "react-native-reanimated";
 
 interface DraggableDieProps {
@@ -36,8 +36,12 @@ export default function DraggableDie({
         if (!isUsed) {
             translateX.value = withSpring(originX);
             translateY.value = withSpring(originY);
+        } else {
+            // Snap to new origin when re-placed
+            translateX.value = withSpring(originX);
+            translateY.value = withSpring(originY);
         }
-    }, [isUsed]);
+    }, [isUsed, originX, originY]);
 
     const pan = Gesture.Pan()
         .onUpdate((event) => {
@@ -59,7 +63,7 @@ export default function DraggableDie({
             { translateX: translateX.value },
             { translateY: translateY.value },
         ],
-        opacity: isUsed ? 0.5 : 1,
+        opacity: 1,
     }));
 
     return (

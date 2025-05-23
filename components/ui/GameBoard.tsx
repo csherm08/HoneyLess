@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 interface GameBoardProps {
     board: string[][];
@@ -14,10 +14,9 @@ export default function GameBoard({ board, onCellPress }: GameBoardProps) {
                 row.map((cell, colIndex) => (
                     <Pressable
                         key={`${rowIndex}-${colIndex}`}
-                        style={[styles.cell, cell !== "" && { backgroundColor: "rgb(255, 159, 28)" }]}
+                        style={[styles.cell]}
                         onPress={() => onCellPress(rowIndex, colIndex)}
                     >
-                        <Text style={styles.cellText}>{cell}</Text>
                     </Pressable>
                 ))
             )}

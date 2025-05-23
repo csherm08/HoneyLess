@@ -27,31 +27,52 @@ export default function GameSession({
     const [board, setBoard] = useState<string[][]>(
         Array.from({ length: 12 }, () => Array(12).fill(""))
     );
+    const [dieOrigins, setDieOrigins] = useState<{ [id: number]: { x: number; y: number } }>({});
+
     const [gridOriginY, setGridOriginY] = useState<number | null>(null);
     const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
     const placedDice = useRef<{ [id: number]: { row: number; col: number } }>({});
-
     const handleDrop = (id: number, x: number, y: number) => {
         if (!hoveredCell || gridOriginY == null) return;
 
         const { row, col } = hoveredCell;
         setHoveredCell(null);
 
+        // Clear previous tile if it was placed
+        const prev = placedDice.current[id];
+        const newBoard = board.map((r) => [...r]);
+        if (prev) {
+            newBoard[prev.row][prev.col] = "";
+        }
+
         const isInBounds =
             row >= 0 && row < 12 &&
             col >= 0 && col < 12 &&
-            board[row][col] === "";
+            newBoard[row][col] === "";
 
         if (!isInBounds) return;
+        newBoard[row][col] = dice[id];
 
-        const newBoard = board.map((r, i) =>
-            r.map((cell, j) => (i === row && j === col ? dice[id] : cell))
-        );
+        // 🧠 Save grid position
+        placedDice.current[id] = { row, col };
+
+        const centerX = col * TILE_SIZE + GRID_ORIGIN_X + TILE_SIZE / 2;
+        const centerY = row * TILE_SIZE + gridOriginY! + TILE_SIZE / 2;
+
+        console.log(`Hovered cell center → x: ${centerX}, y: ${centerY}`);
+
+        // ✅ Save new origin so the die knows where to "stick"
+        setDieOrigins((prevOrigins) => ({
+            ...prevOrigins,
+            [id]: {
+                x: col * TILE_SIZE + GRID_ORIGIN_X,
+                y: row * TILE_SIZE + gridOriginY - TILE_SIZE * 1.5,
+            },
+        }));
 
         const updatedUsed = [...usedDice];
         updatedUsed[id] = true;
 
-        placedDice.current[id] = { row, col };
         setBoard(newBoard);
         setUsedDice(updatedUsed);
     };
@@ -95,27 +116,43 @@ export default function GameSession({
         setBoard(Array.from({ length: 12 }, () => Array(12).fill("")));
         placedDice.current = {};
     };
-
+    const handleReset = () => {
+        setBoard(Array.from({ length: 12 }, () => Array(12).fill("")));
+        setUsedDice(Array(12).fill(false));
+        placedDice.current = {};
+        setDieOrigins({});
+    };
     return (
         <DragProvider>
             <View style={styles.container}>
                 <Text style={styles.title}>{title}</Text>
-                {allowReroll && <Button title="Roll Dice" onPress={handleReroll} />}
-
-                <View style={styles.diceArea}>
-                    {dice.map((letter, index) => (
-                        <DraggableDie
-                            key={index}
-                            id={index}
-                            letter={letter}
-                            originX={(index % 6) * 60 + GRID_ORIGIN_X}
-                            originY={Math.floor(index / 6) * 60 + 10}
-                            isUsed={usedDice[index]}
-                            onDrop={handleDrop}
-                            onHover={handleHover}
-                        />
-                    ))}
+                <View style={{ flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 10 }}>
+                    {allowReroll && (
+                        <Button title="Reroll" onPress={handleReroll} />
+                    )}
+                    <Button title="Reset" onPress={handleReset} />
                 </View>
+                <View style={styles.diceArea}>
+                    {dice.map((letter, index) => {
+                        const origin = dieOrigins[index];
+                        const originX = origin?.x ?? (index % 6) * 60 + GRID_ORIGIN_X;
+                        const originY = origin?.y ?? Math.floor(index / 6) * 60 + 10;
+
+                        return (
+                            <DraggableDie
+                                key={index}
+                                id={index}
+                                letter={letter}
+                                originX={originX}
+                                originY={originY}
+                                isUsed={usedDice[index]}
+                                onDrop={handleDrop}
+                                onHover={handleHover}
+                            />
+                        );
+                    })}
+                </View>
+
 
                 <View
                     onLayout={(e) => {
@@ -186,6 +223,7 @@ const styles = StyleSheet.create({
     },
     diceArea: {
         height: 120,
+        zIndex: 1000,
         position: "relative",
     },
     debugOverlay: {
