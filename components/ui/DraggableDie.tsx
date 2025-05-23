@@ -13,7 +13,6 @@ interface DraggableDieProps {
     id: number;
     originX: number;
     originY: number;
-    isUsed: boolean;
     onDrop: (id: number, x: number, y: number) => void;
     onHover?: (x: number, y: number) => void;
 }
@@ -25,7 +24,6 @@ export default function DraggableDie({
     id,
     originX,
     originY,
-    isUsed,
     onDrop,
     onHover,
 }: DraggableDieProps) {
@@ -33,15 +31,10 @@ export default function DraggableDie({
     const translateY = useSharedValue(originY);
 
     useEffect(() => {
-        if (!isUsed) {
-            translateX.value = withSpring(originX);
-            translateY.value = withSpring(originY);
-        } else {
-            // Snap to new origin when re-placed
-            translateX.value = withSpring(originX);
-            translateY.value = withSpring(originY);
-        }
-    }, [isUsed, originX, originY]);
+        console.log("moving die");
+        translateX.value = withSpring(originX);
+        translateY.value = withSpring(originY);
+    }, [originX, originY]);
 
     const pan = Gesture.Pan()
         .onUpdate((event) => {
