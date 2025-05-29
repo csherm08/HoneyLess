@@ -2,7 +2,6 @@ import DraggableDie from "@/components/ui/DraggableDie";
 import { DragProvider } from "@/hooks/useDragDie";
 import React, { useRef, useState } from "react";
 import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
-import GameBoard from "./ui/GameBoard";
 
 interface GameSessionProps {
     initialDice: string[];
@@ -68,7 +67,25 @@ export default function GameSession({
         }
     }
 
+    const clearPreviousTile = (placedDice: any, i: number, row: number, col: number, newBoard: string[][]) => {
+        newBoard[row][col] = "";
+        delete placedDice.current[i]
+        return newBoard;
+    }
+
     const handleDrop = (id: number, x: number, y: number) => {
+        const prev = placedDice.current[id];
+        console.log(placedDice)
+        let newBoard = board.map((r) => [...r]);
+
+        // Clear previous tile if it was placed
+        if (prev) {
+            console.log("new board", newBoard);
+            newBoard = clearPreviousTile(placedDice, id, prev.row, prev.col, newBoard);
+            setBoard(newBoard)
+            // console.log(`Clearing previous tile at row ${prev.row}, col ${prev.col}`);
+            // newBoard[prev.row][prev.col] = "";
+        }
         if (!hoveredCell || gridOriginY == null) {
             console.log("No hovered cell");
             const home = getHomePosition(id, fitsInOneRow, GRID_ORIGIN_X);
@@ -83,20 +100,20 @@ export default function GameSession({
         const { row, col } = hoveredCell;
         setHoveredCell(null);
 
-        // Clear previous tile if it was placed
-        const prev = placedDice.current[id];
-        const newBoard = board.map((r) => [...r]);
-        if (prev) {
-            newBoard[prev.row][prev.col] = "";
-        }
 
+        console.log("Placing die", id, "at row", row, "col", col);
+        console.log("Current board state:", newBoard);
         const isInBounds =
             row >= 0 && row < 12 &&
             col >= 0 && col < 12 &&
             newBoard[row][col] === "";
 
-        if (!isInBounds) return;
+        if (!isInBounds) {
+            console.log("Position out of bounds or cell already occupied");
+            return;
+        };
         newBoard[row][col] = dice[id];
+        console.log("is in bounds");
 
         // 🧠 Save grid position
         placedDice.current[id] = { row, col };
@@ -119,6 +136,7 @@ export default function GameSession({
         // updatedUsed[id] = true;
 
         setBoard(newBoard);
+        console.log("new board", newBoard);
         // setUsedDice(updatedUsed);
     };
 
@@ -142,7 +160,7 @@ export default function GameSession({
 
         const id = parseInt(dieId);
         // const updatedUsed = [...usedDice];
-        updatedUsed[id] = false;
+        // updatedUsed[id] = false;
 
         const newBoard = board.map((r, ri) =>
             r.map((c, ci) => (ri === row && ci === col ? "" : c))
@@ -223,35 +241,21 @@ export default function GameSession({
                                                 width: TILE_SIZE,
                                                 height: TILE_SIZE,
                                                 // color: isHovered ? "rgb(255, 159, 28)" : "rgba(255,0,0,0.6)",
-                                                borderColor: isHovered ? "rgb(255, 159, 28)" : "rgba(255,,255)",
+                                                borderColor: isHovered ? "rgb(255, 159, 28)" : "rgb(128, 128, 128)",
                                                 borderWidth: isHovered ? 3 : 1,
-                                                backgroundColor: placed
-                                                    ? "rgba(0,0,0,0.05)"
-                                                    : isHovered
-                                                        ? "rgba(0,255,0,0.1)"
-                                                        : "transparent",
+                                                backgroundColor: "rgba(255,255,255,1)",
+                                                // backgroundColor: placed
+                                                //     ? "rgba(100,0,0,0.05)"
+                                                //     : isHovered
+                                                //         ? "rgba(128,128,128)"
+                                                //         : "rgba(255,255,255,1)",
                                             }}
                                         />
                                     );
                                 })
                             )}
-                            {hoveredCell && (
-                                <View
-                                    style={{
-                                        position: "absolute",
-                                        width: 10,
-                                        height: 10,
-                                        borderRadius: 5,
-                                        backgroundColor: "red",
-                                        top: hoveredCell.row * TILE_SIZE + TILE_SIZE / 2 - 5,
-                                        left: hoveredCell.col * TILE_SIZE + TILE_SIZE / 2 - 5 + GRID_ORIGIN_X,
-                                        zIndex: 11,
-                                    }}
-                                />
-                            )}
                         </View>
                     )}
-                    <GameBoard board={board} onCellPress={handleCellPress} />
                 </View>
             </View>
         </DragProvider>
