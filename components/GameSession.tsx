@@ -1,8 +1,8 @@
 import DraggableDie from "@/components/ui/DraggableDie";
-import GameBoard from "@/components/ui/GameBoard";
 import { DragProvider } from "@/hooks/useDragDie";
 import React, { useRef, useState } from "react";
 import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
+import GameBoard from "./ui/GameBoard";
 
 interface GameSessionProps {
     initialDice: string[];
@@ -47,15 +47,24 @@ export default function GameSession({
     // }, [dice, fitsInOneRow, GRID_ORIGIN_X]);
     function getHomePosition(index: number, fitsInOneRow: boolean, GRID_ORIGIN_X: number): { x: number; y: number } {
         if (fitsInOneRow) {
+            // Center all 12 dice in one row
+            const totalDiceWidth = 12 * DIE_SIZE + 11 * 5 // 12 dice + 11 gaps of 5px
+            const startX = (screenWidth - totalDiceWidth) / 2
             return {
-                x: index * (DIE_SIZE + 5) + GRID_ORIGIN_X,
+                x: startX + index * (DIE_SIZE + 5),
                 y: 10,
-            };
+            }
         } else {
+            const dicePerRow = 6
+            const totalRowWidth = dicePerRow * DIE_SIZE + (dicePerRow - 1) * 5 // 6 dice + 5 gaps
+            const startX = (screenWidth - totalRowWidth) / 2
+            const row = Math.floor(index / dicePerRow)
+            const col = index % dicePerRow
+
             return {
-                x: (index % 6) * 60 + GRID_ORIGIN_X,
-                y: Math.floor(index / 6) * 60 + 10,
-            };
+                x: startX + col * (DIE_SIZE + 5),
+                y: 10 + row * (DIE_SIZE + 10), // 10px gap between rows
+            }
         }
     }
 
@@ -102,7 +111,7 @@ export default function GameSession({
             ...prevOrigins,
             [id]: {
                 x: col * TILE_SIZE + GRID_ORIGIN_X,
-                y: row * TILE_SIZE + gridOriginY - TILE_SIZE * 1.5,
+                y: (row * TILE_SIZE + gridOriginY - TILE_SIZE * 1.5) - 1,
             },
         }));
 
@@ -214,7 +223,7 @@ export default function GameSession({
                                                 width: TILE_SIZE,
                                                 height: TILE_SIZE,
                                                 // color: isHovered ? "rgb(255, 159, 28)" : "rgba(255,0,0,0.6)",
-                                                borderColor: isHovered ? "rgb(255, 159, 28)" : "rgba(255,255,255)",
+                                                borderColor: isHovered ? "rgb(255, 159, 28)" : "rgba(255,,255)",
                                                 borderWidth: isHovered ? 3 : 1,
                                                 backgroundColor: placed
                                                     ? "rgba(0,0,0,0.05)"
