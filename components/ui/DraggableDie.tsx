@@ -10,6 +10,7 @@ import Animated, {
 
 interface DraggableDieProps {
     letter: string;
+    dieOrigins: any;
     id: number;
     originX: number;
     originY: number;
@@ -20,6 +21,7 @@ interface DraggableDieProps {
 const DIE_SIZE = 50;
 
 export default function DraggableDie({
+    dieOrigins,
     letter,
     id,
     originX,
@@ -31,10 +33,10 @@ export default function DraggableDie({
     const translateY = useSharedValue(originY);
 
     useEffect(() => {
-        console.log("moving die");
+        console.log(`Moving die ${id} to origin (${originX}, ${originY})`);
         translateX.value = withSpring(originX);
         translateY.value = withSpring(originY);
-    }, [originX, originY]);
+    }, [originX, originY, dieOrigins]);
 
     const pan = Gesture.Pan()
         .onUpdate((event) => {
@@ -77,8 +79,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: "#bbb",
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: "#000",
         zIndex: 10,
     },
     dieText: {

@@ -1,6 +1,6 @@
 import DraggableDie from "@/components/ui/DraggableDie";
 import { DragProvider } from "@/hooks/useDragDie";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button, Dimensions, StyleSheet, Text, View } from "react-native";
 
 interface GameSessionProps {
@@ -30,20 +30,19 @@ export default function GameSession({
     const [gridOriginY, setGridOriginY] = useState<number | null>(null);
     const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
     const placedDice = useRef<{ [id: number]: { row: number; col: number } }>({});
-
     const fitsInOneRow = screenWidth >= (DIE_SIZE + 10) * 12;
-    // useEffect(() => {
-    //     setDieOrigins((prev) => {
-    //         const updated = { ...prev };
-    //         dice.forEach((_, index) => {
-    //             if (!(index in updated)) {
-    //                 updated[index] = getHomePosition(index, fitsInOneRow, GRID_ORIGIN_X);
-    //             }
-    //         });
-    //         return updated;
-    //     });
-    //     console.log("Updated die origins:", dieOrigins);
-    // }, [dice, fitsInOneRow, GRID_ORIGIN_X]);
+    function initializeDiceOrigins() {
+        if (Object.keys(dieOrigins).length === 0 && dice.length > 0) {
+            const initialOrigins: { [id: number]: { x: number; y: number } } = {};
+            dice.forEach((_, index) => {
+                initialOrigins[index] = getHomePosition(index, fitsInOneRow, GRID_ORIGIN_X);
+            });
+            setDieOrigins(initialOrigins);
+        }
+    }
+    useEffect(() => {
+        initializeDiceOrigins();
+    }, [dice, fitsInOneRow, GRID_ORIGIN_X]);
     function getHomePosition(index: number, fitsInOneRow: boolean, GRID_ORIGIN_X: number): { x: number; y: number } {
         if (fitsInOneRow) {
             // Center all 12 dice in one row
@@ -90,6 +89,7 @@ export default function GameSession({
             console.log("No hovered cell");
             const home = getHomePosition(id, fitsInOneRow, GRID_ORIGIN_X);
             console.log(home);
+            dieOrigins[id] = home;
             setDieOrigins(prev => ({
                 ...prev,
                 [id]: home,
@@ -110,6 +110,23 @@ export default function GameSession({
 
         if (!isInBounds) {
             console.log("Position out of bounds or cell already occupied");
+            console.log("No hovered cell");
+
+
+            const origin = dieOrigins[id];
+            const { x: defaultX, y: defaultY } = getHomePosition(id, fitsInOneRow, GRID_ORIGIN_X);
+
+            const originX = origin?.x ?? defaultX;
+            const originY = origin?.y ?? defaultY;
+            console.log("Resetting die to ", id, ":", originX, " ", originY);
+
+            setDieOrigins(prev => ({
+                ...prev,
+                [id]: {
+                    x: originX,
+                    y: originY,
+                },
+            }));
             return;
         };
         newBoard[row][col] = dice[id];
@@ -181,11 +198,19 @@ export default function GameSession({
     };
     const handleReset = () => {
         setBoard(Array.from({ length: 12 }, () => Array(12).fill("")));
-        // setUsedDice(Array(12).fill(false));
-        placedDice.current = {};
-        setDieOrigins({});
+        dice.forEach((_, index) => {
+            const home = getHomePosition(index, fitsInOneRow, GRID_ORIGIN_X);
+            setDieOrigins(prev => ({
+                ...prev,
+                [index]: home,
+            }));
+        });
+
     };
 
+    if (Object.keys(dieOrigins).length === 0) {
+        return <Text>Loading...</Text>; // Wait for dieOrigins to be set
+    }
     return (
         <DragProvider>
             <View style={styles.container}>
@@ -199,7 +224,9 @@ export default function GameSession({
                 <View style={styles.diceArea}>
                     {dice.map((letter, index) => {
                         const origin = dieOrigins[index];
+                        // consojjle.log("Initial origin for die", index, ":", origin);
                         const { x: defaultX, y: defaultY } = getHomePosition(index, fitsInOneRow, GRID_ORIGIN_X);
+                        // console.log("Default origin for die", index, ":", { x: defaultX, y: defaultY });
 
                         const originX = origin?.x ?? defaultX;
                         const originY = origin?.y ?? defaultY;
@@ -209,8 +236,11 @@ export default function GameSession({
                                 key={index}
                                 id={index}
                                 letter={letter}
-                                originX={originX}
-                                originY={originY}
+                                dieOrigins={dieOrigins}
+                                originX={dieOrigins[index]?.x}
+                                // originX={originX}
+                                originY={dieOrigins[index]?.y}
+                                // originY={originY}
                                 onDrop={handleDrop}
                                 onHover={handleHover}
                             />
@@ -244,11 +274,6 @@ export default function GameSession({
                                                 borderColor: isHovered ? "rgb(255, 159, 28)" : "rgb(128, 128, 128)",
                                                 borderWidth: isHovered ? 3 : 1,
                                                 backgroundColor: "rgba(255,255,255,1)",
-                                                // backgroundColor: placed
-                                                //     ? "rgba(100,0,0,0.05)"
-                                                //     : isHovered
-                                                //         ? "rgba(128,128,128)"
-                                                //         : "rgba(255,255,255,1)",
                                             }}
                                         />
                                     );
