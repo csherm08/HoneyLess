@@ -1,4 +1,4 @@
-// utils/dice.ts
+const crypto = require('crypto');
 
 const DICE = [
     "BNSZXK",
@@ -23,11 +23,14 @@ export function rollDice(): string[] {
 }
 
 // Deterministic roll using a seed (for Daily puzzle)
-export function getSeededDice(seed: string): string[] {
-    let rng = seed.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return DICE.map(sides => {
-        rng = (rng * 9301 + 49297) % 233280;
-        const idx = rng % sides.length;
+export function getSeededDice(dateStr: string): string[] {
+    // Get a SHA-256 hash as a Buffer
+    const hash = crypto.createHash('sha256').update(dateStr).digest();
+    // Use each byte to pick a face for each die
+    return DICE.map((sides, i) => {
+        // Use the i-th byte (wrap if needed)
+        const byte = hash[i % hash.length];
+        const idx = byte % sides.length;
         return sides[idx];
     });
 }
